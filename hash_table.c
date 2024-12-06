@@ -54,22 +54,25 @@ void rehash_map(Hash_map* map) {
 
 void put(Hash_map* map, Hash_node* element){
     assert(map->capacity > 0 && "Capacity should be greather from zero");
-    if ((double)map->size / map->capacity >= LOAD_FACTOR) {
+   
+   if (!containsKey(map, element->key)) {  
+     if ((double)map->size / map->capacity >= LOAD_FACTOR) {
         rehash_map(map);
-    }
-    
-    int index = hash_func(element->key, map->capacity);
-    if (map->array[index] != NULL) {
-      Hash_node* tmp = map->array[index];
-      while(tmp->_nxt != NULL) {
-        tmp = tmp->_nxt;
-      }
-      tmp->_nxt = element;
-    }
-    else {
-      map->array[index] = element;
-    }
-    ++map->size;
+     }
+
+     int index = hash_func(element->key, map->capacity);
+     if (map->array[index] != NULL) {
+       Hash_node* tmp = map->array[index];
+       while(tmp->_nxt != NULL) {
+         tmp = tmp->_nxt;
+       }
+       tmp->_nxt = element;
+     }
+     else {
+       map->array[index] = element;
+     }
+     ++map->size;
+   }
 }
 
 
@@ -83,7 +86,7 @@ int main() {
 
     // Get random numbers
     
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < 200; ++i) {
     node[i] = (Hash_node*)malloc(sizeof(Hash_node));
    if (getrandom(&randomNum, sizeof(randomNum), 0) != sizeof(randomNum)) {
         perror("getrandom failed");
@@ -91,7 +94,7 @@ int main() {
     }
 
     // Scale to a desired range 
-    node[i]->key = 11;
+    node[i]->key = randomNum;
     node[i]->iterator = NULL;
     node[i]->_nxt = NULL;
     put(&map, node[i]);
