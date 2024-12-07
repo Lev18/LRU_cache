@@ -3,6 +3,11 @@
 #include <assert.h>
 #include "list.h"
 
+void init_list(List* list) {
+    list->head = NULL;
+    list->tail = NULL;
+}
+
 void push_front(List* list, pair* value) {
     if (list->head == NULL) {
         list->head = (List_Node*)malloc(sizeof(List_Node));
@@ -99,7 +104,10 @@ void erase_elem(List* list, List_Node* node) {
     free(rem_node);
 }
 
-
+List_Node* begin(List* list) {
+    return list->head;
+}
+/*
 int main() {
     List list = {
         .head = NULL,
@@ -112,3 +120,4 @@ int main() {
     push_front(&list, &value);
     print_list(&list);
 }
+*/
