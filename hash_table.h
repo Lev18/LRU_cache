@@ -15,13 +15,15 @@ typedef struct Hash_node {
 typedef struct {
     size_t size;
     int capacity;
+    int rehash_policy;
     Hash_node** array;
 }Hash_map;
 
 
 int hash_func(int key, size_t size);
-void put(Hash_map* map, Hash_node* node);
+void insert(Hash_map* map, Hash_node* node);
 void rehash_map(Hash_map* map);
-bool containsKey(Hash_map*map, int key);
+int containsKey(Hash_map* map, int key);
+void erase_hash_node(Hash_map* map, int key);
 
 #endif

@@ -18,8 +18,10 @@ typedef struct List {
     List_Node* tail;
 }List; 
 
+void init_list(List* list);
 void push_front(List* obj, pair* value);
 void move_front(List* list, List_Node* the_node);
 void pop_back(List* list);
+List_Node* begin(List* list);
 
 #endif
