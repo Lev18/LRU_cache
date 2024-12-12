@@ -19,11 +19,14 @@ typedef struct {
     Hash_node** array;
 }Hash_map;
 
-
+void init_map(Hash_map* map);
 int hash_func(int key, size_t size);
-void insert(Hash_map* map, Hash_node* node);
+void insert_hash_node(Hash_map* map, Hash_node* node);
+void insert_list_node(Hash_map* map, List_Node* elem);
+
 void rehash_map(Hash_map* map);
 int containsKey(Hash_map* map, int key);
 void erase_hash_node(Hash_map* map, int key);
+List_Node* get_htable_value(Hash_map* map, int key);
 
 #endif
