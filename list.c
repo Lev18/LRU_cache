@@ -1,9 +1,10 @@
-#include<stdlib.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include "list.h"
 
 void init_list(List* list) {
+    list->size = 0;
     list->head = NULL;
     list->tail = NULL;
 }
@@ -26,6 +27,7 @@ void push_front(List* list, pair* value) {
      tmp->prev = list->head;
      list->head->prev = NULL;
     }
+    ++list->size;
 }
 
 void print_list(List* hd) {
@@ -70,6 +72,7 @@ void pop_back(List* list) {
         list->tail = NULL;
         list->head = NULL;
     }
+    --list->size;
     free(tmp);
 }
 
@@ -101,6 +104,7 @@ void erase_elem(List* list, List_Node* node) {
         rem_node->prev->next = rem_node->next;
         rem_node->next->prev = rem_node->prev;
     }
+    --list->size;
     free(rem_node);
 }
 

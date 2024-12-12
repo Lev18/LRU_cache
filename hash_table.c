@@ -53,26 +53,50 @@ void rehash_map(Hash_map* map) {
     
 }
 
-void insert(Hash_map* map, Hash_node* element){
-    assert(map->capacity > 0 && "Capacity should be greather from zero");
-     
-   if (containsKey(map, element->key) == -1) {
-    if ((double)map->size / map->capacity >= LOAD_FACTOR) {
-        rehash_map(map);
-     }
-     int index = hash_func(element->key, map->capacity);
-     if (map->array[index] != NULL) {
-       Hash_node* tmp = map->array[index];
-       while(tmp->_nxt != NULL) {
-         tmp = tmp->_nxt;
-       }
-       tmp->_nxt = element;
-     }
-     else {
+void insert_list_node(Hash_map* map, List_Node* elem) {
+    assert(map->capacity > 0 && "Capacity should be greather than zero");
+    
+    if (containsKey(map, elem->value.first) == -1) {
+        if ((double)map->size / map->capacity >= LOAD_FACTOR) {
+            rehash_map(map);
+        }
+
+        Hash_node* element = (Hash_node*)malloc(sizeof(Hash_node));
+        element->key = elem->value.first;
+        element->iterator = elem;
+        int index = hash_func(element->key, map->capacity);
+        if (map->array[index] != NULL) {
+            Hash_node* tmp = map->array[index];
+            while(tmp->_nxt != NULL) {
+                tmp = tmp->_nxt;
+            }
+            tmp->_nxt = element;
+        }
+
        map->array[index] = element;
-     }
-     ++map->size;
-   }
+       ++map->size;
+    }
+}
+void insert_hash_node(Hash_map* map, Hash_node* element) {
+    assert(map->capacity > 0 && "Capacity should be greather than zero");
+    
+    if (containsKey(map, element->key) == -1) {
+        if ((double)map->size / map->capacity >= LOAD_FACTOR) {
+            rehash_map(map);
+        }
+ 
+        int index = hash_func(element->key, map->capacity);
+        if (map->array[index] != NULL) {
+            Hash_node* tmp = map->array[index];
+            while(tmp->_nxt != NULL) {
+                tmp = tmp->_nxt;
+            }
+            tmp->_nxt = element;
+        }
+
+       map->array[index] = element;
+       ++map->size;
+    }
 }
 
 void erase_hash_node(Hash_map* map, int key) {
@@ -94,7 +118,15 @@ void erase_hash_node(Hash_map* map, int key) {
     }
 }
 
+List_Node* get_htable_value(Hash_map* map, int key) {
+    int index = containsKey(map, key);
+    if (index >= 0) {
+        return map->array[index]->iterator;
+    }
+    return NULL;
+}
 
+/*
 int main() {
   Hash_map map;
   init_map(&map);
@@ -109,8 +141,6 @@ for (int i = 0; i < 71; ++i) {
         insert(&map, node[i]);
     }
 }
-  
-/*
 
   unsigned int randomNum;
 
@@ -129,7 +159,7 @@ for (int i = 0; i < 71; ++i) {
     node[i]->_nxt = NULL;
     insert(&map, node[i]);
   }
-*/
+
   for (int i = 0; i < map.capacity; ++i) {
       Hash_node* curr = map.array[i];
       while (curr != NULL) {
@@ -145,4 +175,4 @@ for (int i = 0; i < 71; ++i) {
   printf("%d\n", containsKey(&map, 7));
    return 0;
 }
-
+*/
