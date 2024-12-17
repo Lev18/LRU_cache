@@ -11,7 +11,7 @@
 #define append(token, elem)                                                                       \
       do {                                                                                        \
           if ((token)->size ==(token)->capacity) {                                                \
-            (token)->capacity = (token)->capacity == 0 ? STR_INIT_CAP : ((token)->capacity *= 2); \
+            ((token)->capacity) = (token)->capacity == 0 ? STR_INIT_CAP : ((token)->capacity *= 2); \
             (token)->string = (char*)realloc((token)->string, (token)->capacity * sizeof(char));  \
             assert ((token)->string != NULL && "Need more space");                                \
           }                                                                                       \
@@ -22,12 +22,17 @@
       do {                                                                                        \
           if ((token)->size ==(token)->capacity) {                                                \
             (token)->capacity = (token)->capacity == 0 ? STR_INIT_CAP : ((token)->capacity *= 2); \
-            (token)->item = (elem_type*)realloc((token)->item, (token)->capacity * sizeof(elem_type));  \
-            assert ((token)->item != NULL && "Need more space");                                \
+            (token)->items = (elem_type*)realloc((token)->items, (token)->capacity * sizeof(elem_type));  \
+            assert ((token)->items != NULL && "Need more space");                                \
           }                                                                                       \
-          (token)->item[(token)->size++] = elem; \
+          (token)->items[(token)->size++] = elem; \
       } while(0);
+size_t cur_pos = 0;
 
+typedef struct {
+  int size;
+  const char* str;
+}String_view;
 
 typedef struct {
     int size;
@@ -38,7 +43,7 @@ typedef struct {
 typedef struct {
     int size;
     int capacity;
-    String_Builder** item;
+    String_view* items;
 }String_Buffer;
 
 
@@ -48,7 +53,7 @@ typedef enum {
     GET
 }Instructs;
 
-void init_lru_cache(LRU_cache* cache, size_t cap) {
+void init_lru_cache(LRU_cache* cache, int cap) {
     cache->capacity = cap;
     init_list(&cache->key_hits);
     init_map(&cache->hash_table);
@@ -94,34 +99,50 @@ void init_string(String_Builder* sb) {
     sb->string = NULL;
 }
 
-void tokenize(String_Buffer* buffer, String_Builder* sb) {
-    size_t i = 0;
-    String_Builder* sb = (String_Builder*)malloc(sizeof(String_Buffer));
-    init_string(sb);
-       while (i < LINE_SIZE) {
-        if (isalnum(line[i]) > 0) {
-            append(sb, line[i]);
-        }
-        else if ( line[i] == '['  || line[i] == ','  || line[i] == ']') {
-            append_token(buffer, String_Builder*, sb);
-            sb = (String_Builder*)malloc(sizeof(String_Buffer));
-            init_string(sb);
-        }
-        ++i;
-    }
+void chop_char(String_view* sv, const char* file_cont) {
+  char ch = *(file_cont + cur_pos);
+  if (isalnum(ch)) {
+    ++sv->size;
+  }
+  ++cur_pos;
 }
 
-int main(void) {
-    LRU_cache cache;
-    FILE* file;
-    char line[LINE_SIZE];
+void remove_noise(const char* file_cont)  {
+  char ch = *(file_cont + cur_pos);
+  while (!isalnum(ch) && ch != '\0') {
+    ch = *(file_cont + (++cur_pos));
+  }
+}
 
+String_view* tokenize(const char* file_cont) {
+  String_view* sv = (String_view*)malloc(sizeof(String_view));
+  sv->size = 0;
+  remove_noise(file_cont);
+  sv->str = file_cont + cur_pos;
+ // sv->str = *file_cont;
+ 
+  int i = 0;
+  char ch = *(file_cont + cur_pos);
+  
+  while (ch != '\0' && ch != ' ' && ch != '\n') {
+    chop_char(sv, file_cont);
+    ch = *(file_cont + cur_pos);
+    ++i;
+  }
+  ++cur_pos;
+  return sv;
+}
+
+
+int main(void) {
+    // LRU_cache cache;
+    FILE* file;
     file = fopen("./test1.td", "r");
     if (file != NULL){
         String_Buffer buffer = {
             .size = 0,
             .capacity = 0,
-            .item = NULL
+            .items = NULL
         };
 
         String_Builder sb = {
@@ -133,13 +154,22 @@ int main(void) {
         while ((ch = fgetc( file)) != EOF) {
             append(&sb, ch);
         }
+        append(&sb, '\0');
+
+        while (sb.string[cur_pos] != '\0') {
+            append_token(&buffer, String_view, *(tokenize((const char*)sb.string)));
+        }
 
         int i = 0;
-        while (i < sb.size) {
-                printf("%c\n", sb.string[i]);
+        while (i < buffer.size) {
+            int j = 0;
+            while (j < buffer.items[i].size) {
+                printf("%c", *(buffer.items[i].str + j));
+                ++j;
+            }
             ++i;
+            printf("\n");
         }
-        printf("%d\n", sb.size);
 
         fclose(file);
     }
