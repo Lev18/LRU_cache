@@ -117,10 +117,51 @@ void uint_instr(String_Buffer* inst) {
     }
 }
 
-void init_string(String_Builder* sb) {
+void init_str_buff(String_Buffer* sb) {
     sb->size = 0;
     sb->capacity = 0;
-    sb->string = NULL;
+    sb->items = NULL;
+}
+
+String_view* int_to_str(int val) {
+      String_view* sv = (String_view*)malloc(sizeof(String_view));
+      sv->size = 0;
+      sv->str = "-1";
+ 
+    return sv;
+}
+
+String_Buffer* cache_engine(String_Buffer* sb ) {
+    String_Buffer* answer = (String_Buffer*)malloc(sizeof(String_Buffer));
+    init_str_buff(answer);
+    
+    assert((inst_array[0].type == LRUCREATE) && "ALL tests should have 'LRUCache' instruction" );
+
+    LRU_cache cache;
+    int id = 0;
+
+    int cont_key = 0;
+    String_view temp = {.size = 4, .str = "null"};
+    while (id < instr_id) {
+        switch (inst_array[id].type) {
+            case LRUCREATE:
+                init_lru_cache(&cache, inst_array[id].key);
+                append_token(answer, String_view, temp);
+                break;       
+            case PUT:
+                put_element(&cache, inst_array[id].key,inst_array[id].value);
+                append_token(answer, String_view, temp);
+                break;
+            case GET:
+                cont_key = get_element(&cache, inst_array[id].key);
+                append_token(answer, String_view, *int_to_str(cont_key));
+                break;
+
+        }
+        //append_token(answer, , elem);
+        ++id;
+    }
+    return answer;
 }
 
 void chop_char(String_view* sv, const char* file_cont) {
@@ -186,10 +227,13 @@ int main(void) {
         }
 
         uint_instr(&buffer);
-    
+        
+        String_Buffer* result = cache_engine(&buffer);
+        
         int i = 0;
-        while (i < instr_id) {
-            printf("Instruction` %d, key` %d,  value` %d\n", inst_array[i].type, inst_array[i].key, inst_array[i].value);
+        while (i < result->size) {
+           // printf("%s,\n", result->items[i].str);
+            //printf("Instruction` %d, key` %d,  value` %d\n", inst_array[i].type, inst_array[i].key, inst_array[i].value);
             ++i;
         }
 
