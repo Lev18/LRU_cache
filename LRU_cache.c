@@ -7,6 +7,7 @@
 
 #define LINE_SIZE 20
 #define STR_INIT_CAP 2 
+#define ALL_INST 200
 
 #define append(token, elem)                                                                       \
       do {                                                                                        \
@@ -27,7 +28,9 @@
           }                                                                                       \
           (token)->items[(token)->size++] = elem; \
       } while(0);
+
 size_t cur_pos = 0;
+int instr_id = 0;
 
 typedef struct {
   int size;
@@ -46,12 +49,19 @@ typedef struct {
     String_view* items;
 }String_Buffer;
 
-
 typedef enum {
     LRUCREATE,
     PUT,
     GET
+}Instr_type;
+
+typedef struct {
+    int key;
+    int value;
+    Instr_type type;
 }Instructs;
+
+Instructs inst_array[ALL_INST];
 
 void init_lru_cache(LRU_cache* cache, int cap) {
     cache->capacity = cap;
@@ -81,15 +91,29 @@ int get_element(LRU_cache* cache, int key) {
     return it->value.second;
 }
 
-Instructs uint_instr(const char* inst) {
-    if (strcmp(inst, "LRUCache") == 0) {
-        return LRUCREATE;
-    }
-    else if (strcmp(inst, "put") == 0) {
-        return PUT;
-    }
-    else {
-        return GET;
+void uint_instr(String_Buffer* inst) {
+    assert((inst->size * 10 / 25 ) < ALL_INST && "Insufficient space for all instructions");
+
+    int it = 0;
+    while (it < inst->size) {
+        if (strncmp(inst->items[it].str, "LRUCache", inst->items[it].size) == 0) {
+            inst_array[instr_id].type = LRUCREATE;
+            inst_array[instr_id].key = atoi(inst->items[++it].str);
+            inst_array[instr_id].value = -1; // atoi(inst->items[++it].str);
+        }
+        else if (strncmp(inst->items[it].str, "put",inst->items[it].size) == 0) {
+            inst_array[instr_id].type = PUT;
+            inst_array[instr_id].key = atoi(inst->items[++it].str);
+            inst_array[instr_id].value = atoi(inst->items[++it].str);
+        }
+        else {
+            inst_array[instr_id].type = GET;
+            inst_array[instr_id].key = atoi(inst->items[++it].str);
+            inst_array[instr_id].value = -1; // atoi(inst->items[++it].str);
+
+        }
+        ++it;
+        ++instr_id;
     }
 }
 
@@ -133,12 +157,12 @@ String_view* tokenize(const char* file_cont) {
   return sv;
 }
 
-
 int main(void) {
     // LRU_cache cache;
     FILE* file;
     file = fopen("./test1.td", "r");
     if (file != NULL){
+
         String_Buffer buffer = {
             .size = 0,
             .capacity = 0,
@@ -150,6 +174,7 @@ int main(void) {
             .capacity = 0,
             .string = NULL
         };
+
         char ch;
         while ((ch = fgetc( file)) != EOF) {
             append(&sb, ch);
@@ -160,15 +185,12 @@ int main(void) {
             append_token(&buffer, String_view, *(tokenize((const char*)sb.string)));
         }
 
+        uint_instr(&buffer);
+    
         int i = 0;
-        while (i < buffer.size) {
-            int j = 0;
-            while (j < buffer.items[i].size) {
-                printf("%c", *(buffer.items[i].str + j));
-                ++j;
-            }
+        while (i < instr_id) {
+            printf("Instruction` %d, key` %d,  value` %d\n", inst_array[i].type, inst_array[i].key, inst_array[i].value);
             ++i;
-            printf("\n");
         }
 
         fclose(file);
