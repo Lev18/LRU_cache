@@ -7,7 +7,7 @@
 
 #define LINE_SIZE 20
 #define STR_INIT_CAP 2 
-#define ALL_INST 200
+#define ALL_INST 1000
 
 #define append(token, elem)                                                                       \
       do {                                                                                        \
@@ -147,7 +147,7 @@ String_view* int_to_str(int val) {
             append(sb, num);
             rev_val /= 10;
         }
-       // append(sb, '\0');
+        append(sb, '\0');
         sv->str = sb->string;
         sv->size = sb->size;
       }
@@ -221,10 +221,12 @@ String_view* tokenize(const char* file_cont) {
   return sv;
 }
 
+
+
 int main(void) {
     // LRU_cache cache;
     FILE* file;
-    file = fopen("./Tests/test1.td", "r");
+    file = fopen("./Tests/test4.td", "r");
     if (file != NULL){
 
         String_Buffer buffer = {
