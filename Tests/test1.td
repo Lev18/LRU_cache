@@ -1,4 +1,4 @@
-LRUCache, [2]
+LRUCache [2]
 put [1, 1]
 put [2, 2]
 get [1]
