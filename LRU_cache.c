@@ -123,11 +123,34 @@ void init_str_buff(String_Buffer* sb) {
     sb->items = NULL;
 }
 
+void init_str(String_Builder* sb) {
+    sb->size = 0;
+    sb->capacity = 0;
+    sb->string = NULL;
+}
 String_view* int_to_str(int val) {
       String_view* sv = (String_view*)malloc(sizeof(String_view));
       sv->size = 0;
-      sv->str = "-1";
- 
+      if (val < 0) {
+        sv->str = "-1";
+      }
+
+      else {
+        int rev_val = 0;
+        while (val) {
+            rev_val = rev_val * 10 + (val % 10);
+            val /= 10;
+        }
+      String_Builder* sb = (String_Builder*)malloc(sizeof(String_Builder));
+        while (rev_val) {
+            char num = (rev_val % 10) + 48;
+            append(sb, num);
+            rev_val /= 10;
+        }
+       // append(sb, '\0');
+        sv->str = sb->string;
+        sv->size = sb->size;
+      }
     return sv;
 }
 
@@ -201,7 +224,7 @@ String_view* tokenize(const char* file_cont) {
 int main(void) {
     // LRU_cache cache;
     FILE* file;
-    file = fopen("./test1.td", "r");
+    file = fopen("./Tests/test1.td", "r");
     if (file != NULL){
 
         String_Buffer buffer = {
@@ -229,10 +252,10 @@ int main(void) {
         uint_instr(&buffer);
         
         String_Buffer* result = cache_engine(&buffer);
-        
+       
         int i = 0;
         while (i < result->size) {
-           // printf("%s,\n", result->items[i].str);
+            printf("%s,\n", result->items[i].str);
             //printf("Instruction` %d, key` %d,  value` %d\n", inst_array[i].type, inst_array[i].key, inst_array[i].value);
             ++i;
         }

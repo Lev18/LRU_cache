@@ -19,13 +19,13 @@ void push_front(List* list, pair* value) {
         list->tail->prev = NULL;
     }
     else {
-     List_Node* tmp = list->head;
-     list->head = (List_Node*)malloc(sizeof(List_Node));
-     list->head->value.first = value->first;
-     list->head->value.second = value->second;
-     list->head->next = tmp;
-     tmp->prev = list->head;
-     list->head->prev = NULL;
+        List_Node* tmp = (List_Node*)malloc(sizeof(List_Node));
+        tmp->value.first  = value->first;
+        tmp->value.second = value->second;
+        tmp->next = list->head;
+        tmp->prev = NULL;
+        list->head->prev = tmp;
+        list->head = tmp;
     }
     ++list->size;
 }
@@ -45,10 +45,11 @@ void move_front(List* list, List_Node* the_node) {
 
     else if (the_node == list->tail) {
         the_node->next = list->head;
-        the_node->prev->next = NULL;
         list->head->prev = the_node;
-        the_node->prev = NULL;
         list->head = the_node;
+        list->tail = the_node->prev;
+        the_node->prev->next = NULL;
+        the_node->prev = NULL;
     }
 
     else {
@@ -64,7 +65,7 @@ void move_front(List* list, List_Node* the_node) {
 void pop_back(List* list) {
     assert(list->tail != NULL && "list is empty"); 
     List_Node* tmp = list->tail;
-    if (list-> tail->prev != NULL) { 
+    if (list->tail->prev != NULL) { 
        list->tail = tmp->prev;
        list->tail->next = NULL;
     }
