@@ -147,7 +147,7 @@ String_view* int_to_str(int val) {
             append(sb, num);
             rev_val /= 10;
         }
-       // append(sb, '\0');
+        append(sb, '\0');
         sv->str = sb->string;
         sv->size = sb->size;
       }
