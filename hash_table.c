@@ -61,9 +61,11 @@ void insert_list_node(Hash_map* map, List_Node* elem) {
             rehash_map(map);
         }
 
-        Hash_node* element = (Hash_node*)malloc(sizeof(Hash_node));
-        element->key = elem->value.first;
+        Hash_node* element = (Hash_node*)calloc(1, sizeof(Hash_node));
+        element->key = elem->value.first;      
+        element->_nxt = NULL;
         element->iterator = elem;
+
         int index = hash_func(element->key, map->capacity);
         if (map->array[index] != NULL) {
             Hash_node* tmp = map->array[index];
