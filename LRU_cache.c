@@ -3,11 +3,13 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
-
+#include <dirent.h>
 
 #define LINE_SIZE 20
 #define STR_INIT_CAP 2 
 #define ALL_INST 1000
+#define VALUES_DIGITS 5
+#define TEST_COUNT 25
 
 #define append(token, elem)                                                                       \
       do {                                                                                        \
@@ -31,6 +33,21 @@
 
 size_t cur_pos = 0;
 int instr_id = 0;
+char* test_files[TEST_COUNT];
+
+typedef enum {
+    LRUCREATE,
+    PUT,
+    GET
+}Instr_type;
+
+typedef struct {
+    int key;
+    int value;
+    Instr_type type;
+}Instructs;
+
+Instructs inst_array[ALL_INST];
 
 typedef struct {
   int size;
@@ -49,19 +66,7 @@ typedef struct {
     String_view* items;
 }String_Buffer;
 
-typedef enum {
-    LRUCREATE,
-    PUT,
-    GET
-}Instr_type;
 
-typedef struct {
-    int key;
-    int value;
-    Instr_type type;
-}Instructs;
-
-Instructs inst_array[ALL_INST];
 
 void init_lru_cache(LRU_cache* cache, int cap) {
     cache->capacity = cap;
@@ -128,6 +133,7 @@ void init_str(String_Builder* sb) {
     sb->capacity = 0;
     sb->string = NULL;
 }
+
 String_view* int_to_str(int val) {
       String_view* sv = (String_view*)malloc(sizeof(String_view));
       sv->size = 0;
@@ -136,16 +142,32 @@ String_view* int_to_str(int val) {
       }
 
       else {
-        int rev_val = 0;
-        while (val) {
-            rev_val = rev_val * 10 + (val % 10);
-            val /= 10;
+        char buffer[VALUES_DIGITS];
+        int i = 0;
+        while (i < VALUES_DIGITS) {
+            buffer[i] ='\0';
+            ++i;
+        } 
+        
+        int j = 0;
+        if (val == 0) {
+            buffer[0] = '0';
+            j++;
         }
-      String_Builder* sb = (String_Builder*)malloc(sizeof(String_Builder));
-        while (rev_val) {
-            char num = (rev_val % 10) + 48;
-            append(sb, num);
-            rev_val /= 10;
+
+        String_Builder* sb = (String_Builder*)malloc(sizeof(String_Builder));
+        init_str(sb);
+
+        while (val) {
+            buffer[j] = (val % 10) + 48;
+            val /= 10;
+            ++j;
+        }
+        --j;
+
+        while (j >= 0) {
+            append(sb, buffer[j]);
+            --j;
         }
         append(sb, '\0');
         sv->str = sb->string;
@@ -221,52 +243,108 @@ String_view* tokenize(const char* file_cont) {
   return sv;
 }
 
+int compare(const void *a, const void *b) {
+    return strcmp(*(const char**)a, *(const char**)b);
+}
 
+int read_tests(const char* dir_path) {
+   struct dirent *de;
+
+    DIR* dr = opendir(dir_path);
+    
+    if (dr == NULL) {
+        fprintf(stderr, "Unable to open directory");
+        return 1;
+    }
+
+    int file_count = 0;
+    while ((de = readdir(dr)) != NULL) {
+        if (strstr(de->d_name,".td") != NULL) {
+            test_files[file_count] = strdup(de->d_name);
+            if (test_files[file_count] == NULL) {
+                perror("Strdup failed");
+                closedir(dr);
+                return 1;
+            }
+            ++file_count;
+        }
+    }
+    qsort(test_files, file_count, sizeof(char*), compare);
+
+    closedir(dr);
+    return file_count;
+}
 
 int main(void) {
     // LRU_cache cache;
-    FILE* file;
-    file = fopen("./Tests/test4.td", "r");
-    if (file != NULL){
+    int ind = 0;
+    int list_of_file = read_tests("./Tests");
+    while(ind < list_of_file) {
+            char file_path[256];
+            snprintf(file_path, sizeof(file_path), "./Tests/%s", test_files[ind]);
+            FILE* file = fopen(file_path, "r");
 
-        String_Buffer buffer = {
-            .size = 0,
-            .capacity = 0,
-            .items = NULL
-        };
+            if (file != NULL) {
+                 String_Buffer buffer = {
+                    .size = 0,
+                    .capacity = 0,
+                    .items = NULL
+                } ;
 
-        String_Builder sb = {
-            .size = 0,
-            .capacity = 0,
-            .string = NULL
-        };
+                String_Builder sb = {
+                     .size = 0,
+                     .capacity = 0,
+                     .string = NULL
+                } ;
 
-        char ch;
-        while ((ch = fgetc( file)) != EOF) {
-            append(&sb, ch);
-        }
-        append(&sb, '\0');
+               char ch;
+               while ((ch = fgetc( file)) != EOF) {
+                   append(&sb, ch);
+               }
+              
+               append(&sb, '\0');
+               while (sb.string[cur_pos] != '\0') {
+                   append_token(&buffer, String_view, *(tokenize((const char*)sb.string)));
+               }
+               uint_instr(&buffer);
+               
+               char f_p[256];
+               snprintf(f_p,sizeof(f_p), "./Outputs/test%d.out", ind + 1); 
+               FILE* file_w = fopen(f_p, "w");
 
-        while (sb.string[cur_pos] != '\0') {
-            append_token(&buffer, String_view, *(tokenize((const char*)sb.string)));
-        }
+               if (file_w == NULL) {
+                   printf("Unable to open %s file for output\n", f_p);
+                   exit(1);
+               }
 
-        uint_instr(&buffer);
-        
-        String_Buffer* result = cache_engine(&buffer);
-       
-        int i = 0;
-        while (i < result->size) {
-            printf("%s,\n", result->items[i].str);
-            //printf("Instruction` %d, key` %d,  value` %d\n", inst_array[i].type, inst_array[i].key, inst_array[i].value);
-            ++i;
-        }
+               String_Buffer* result = cache_engine(&buffer);
+               int i = 0;
+               while (i < result->size) {
+                    fprintf(file_w, "%s\n", result->items[i].str);
+                    ++i;
+                }
+                
+               for (int i = 0; i < instr_id; ++i) {
+                    inst_array[i].key = 0;
+                    inst_array[i].value = 0;
+                    inst_array[i].type = 0;
+                }
+                cur_pos = 0;
+                instr_id = 0;
 
-        fclose(file);
+                printf("Runing test%d\n", ind + 1);
+                fclose(file_w);
+                fclose(file);
+             }
+            else {
+                printf("Unable to open %s file\n", test_files[list_of_file]);
+                exit(1);
+             }
+
+           
+
+            free(test_files[ind]);
+            ++ind;
     }
-    else {
-        printf("Unable to open file");
-        exit(1);
-    }
-    return 0;
+       return 0;
 }
