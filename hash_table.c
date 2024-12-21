@@ -123,7 +123,13 @@ void erase_hash_node(Hash_map* map, int key) {
 List_Node* get_htable_value(Hash_map* map, int key) {
     int index = containsKey(map, key);
     if (index >= 0) {
-        return map->array[index]->iterator;
+        Hash_node* curr = map->array[index];
+        while (curr != NULL) {
+            if (curr->key == key) {
+                return curr->iterator;
+            }
+            curr = curr->_nxt;
+        }
     }
     return NULL;
 }
